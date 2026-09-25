@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PanelLeftClose, PanelLeft, FileAudio, Search, FileText, Clapperboard, LogOut, ChevronLeft, Target, Home } from 'lucide-react';
+import { PanelLeftClose, PanelLeft, FileAudio, Search, FileText, Clapperboard, LogOut, ChevronLeft, Target, Home, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '../supabase';
 import UserProfileModal from './UserProfileModal';
 
@@ -101,38 +101,47 @@ const Sidebar = ({ activeTab, setActiveTab }) => {
             <a 
               href="#" 
               className={`sidebar-link ${activeTab === 'pesquisador' ? 'active' : ''}`} 
-              title="Pesquisador"
+              title="Pesquisar"
               onClick={(e) => { e.preventDefault(); setActiveTab('pesquisador'); }}
             >
               <Search size={16} />
-              {!isCollapsed && <span>Pesquisador</span>}
+              {!isCollapsed && <span>Pesquisar</span>}
             </a>
             <a 
               href="#" 
               className={`sidebar-link ${activeTab === 'redator' ? 'active' : ''}`} 
-              title="Redator"
+              title="Escrever"
               onClick={(e) => { e.preventDefault(); setActiveTab('redator'); }}
             >
               <FileText size={16} />
-              {!isCollapsed && <span>Redator</span>}
+              {!isCollapsed && <span>Escrever</span>}
             </a>
             <a 
               href="#" 
               className={`sidebar-link ${activeTab === 'transcritor' ? 'active' : ''}`} 
-              title="Transcritor"
+              title="Transcrever"
               onClick={(e) => { e.preventDefault(); setActiveTab('transcritor'); }}
             >
               <FileAudio size={16} />
-              {!isCollapsed && <span>Transcritor</span>}
+              {!isCollapsed && <span>Transcrever</span>}
             </a>
             <a 
               href="#" 
               className={`sidebar-link ${activeTab === 'roteirista' ? 'active' : ''}`} 
-              title="Roteirista"
+              title="Roteirizar"
               onClick={(e) => { e.preventDefault(); setActiveTab('roteirista'); }}
             >
               <Clapperboard size={16} />
-              {!isCollapsed && <span>Roteirista</span>}
+              {!isCollapsed && <span>Roteirizar</span>}
+            </a>
+            <a 
+              href="#" 
+              className={`sidebar-link ${activeTab === 'imagens' ? 'active' : ''}`} 
+              title="Criar Imagens"
+              onClick={(e) => { e.preventDefault(); setActiveTab('imagens'); }}
+            >
+              <ImageIcon size={16} />
+              {!isCollapsed && <span>Criar Imagens</span>}
             </a>
           </>
         )}

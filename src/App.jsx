@@ -5,6 +5,7 @@ import CopywriterForm from './components/CopywriterForm';
 import TranscriberForm from './components/TranscriberForm';
 import ThemeBank from './components/ThemeBank';
 import ScriptwriterForm from './components/ScriptwriterForm';
+import ImageGeneratorForm from './components/ImageGeneratorForm';
 import Login from './components/Login';
 import { supabase } from './supabase';
 
@@ -122,6 +123,9 @@ function App() {
               output={scriptOutput}
               setOutput={setScriptOutput}
             />
+          )}
+          {activeTab === 'imagens' && (
+            <ImageGeneratorForm />
           )}
         </main>
       </div>

@@ -413,7 +413,7 @@ body {
 }
 
 .modal-content {
-  background-color: var(--surface-color);
+  background-color: var(--background-color);
   border-radius: var(--radius-lg);
   padding: 1.5rem;
   width: 90vw;

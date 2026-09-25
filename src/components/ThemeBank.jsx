@@ -14,6 +14,7 @@ const ThemeBank = () => {
   const [filterStatus, setFilterStatus] = useState('pendente');
   const [showAgendamentos, setShowAgendamentos] = useState(false);
   const [deleteCandidateId, setDeleteCandidateId] = useState(null);
+  const [resultSearchQuery, setResultSearchQuery] = useState('');
   
   const [agendamentos, setAgendamentos] = useState([]);
   const [editAgendamento, setEditAgendamento] = useState(null);
@@ -46,7 +47,8 @@ const ThemeBank = () => {
       const { data, error } = await supabase
         .from('pesquisador')
         .select('*')
-        .eq('status', filterStatus);
+        .eq('status', filterStatus)
+        .order('id', { ascending: false });
 
       if (error) throw error;
       setResults(data || []);
@@ -158,17 +160,24 @@ const ThemeBank = () => {
         },
         body: JSON.stringify(payload)
       });
+      
+      // Atualiza a lista com os novos resultados
+      await fetchThemes();
     } catch (error) {
       console.error('Erro ao acionar webhook:', error);
-    }
-    
-    // Como a pesquisa é via Webhook, apenas finalizamos o loading
-    setTimeout(() => {
+    } finally {
       setIsSearching(false);
-      // Aqui poderíamos chamar fetchThemes() se o webhook fosse síncrono,
-      // mas como ele roda no n8n, os dados devem aparecer depois.
-    }, 1500);
+    }
   };
+
+  const filteredResults = results.filter(r => 
+    r.tema?.toLowerCase().includes(resultSearchQuery.toLowerCase()) || 
+    r.resultado?.toLowerCase().includes(resultSearchQuery.toLowerCase())
+  );
+
+  const filteredAgendamentos = agendamentos.filter(a => 
+    a.tema?.toLowerCase().includes(resultSearchQuery.toLowerCase())
+  );
 
   return (
     <div className="main-layout-grid" style={{ gridTemplateColumns: '1fr 3fr' }}>
@@ -253,6 +262,18 @@ const ThemeBank = () => {
           <h2 className="section-title" style={{ margin: 0 }}>Resultados da Pesquisa</h2>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ position: 'relative', width: '200px' }}>
+              <Search size={14} style={{ position: 'absolute', left: '0.5rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+              <input 
+                type="text" 
+                className="form-input" 
+                placeholder="Buscar temas..." 
+                value={resultSearchQuery}
+                onChange={(e) => setResultSearchQuery(e.target.value)}
+                style={{ paddingLeft: '2rem', padding: '0.25rem 0.5rem 0.25rem 2rem', fontSize: '0.85rem', height: '30px' }}
+              />
+            </div>
+
             <div className="switch-container">
               <label className="switch-label" htmlFor="agendamentos-switch">Agendamentos</label>
               <label className="switch">
@@ -286,7 +307,7 @@ const ThemeBank = () => {
         <div className="results-container" style={{ marginTop: '1rem' }}>
           {showAgendamentos && (
             <div className="agendamentos-grid">
-              {agendamentos.map(agendamento => (
+              {filteredAgendamentos.map(agendamento => (
                 <div key={agendamento.id} className="agendamento-card">
                   <div className="agendamento-header">
                     <h3 className="agendamento-title">{agendamento.tema || 'Sem Tema'}</h3>
@@ -305,7 +326,7 @@ const ThemeBank = () => {
             </div>
           )}
 
-          {!showAgendamentos && results.length === 0 && !isSearching && (
+          {!showAgendamentos && filteredResults.length === 0 && !isSearching && (
             <div className="empty-state">
               <TrendingUp size={32} style={{ color: 'var(--primary-color)', marginBottom: '1rem', opacity: 0.5 }} />
               <p style={{ color: 'var(--text-secondary)' }}>Faça uma pesquisa para ver os resultados aqui.</p>
@@ -319,9 +340,9 @@ const ThemeBank = () => {
             </div>
           )}
 
-          {!showAgendamentos && !isSearching && results.length > 0 && (
+          {!showAgendamentos && !isSearching && filteredResults.length > 0 && (
             <div className="theme-cards">
-              {results.map((result) => (
+              {filteredResults.map((result) => (
                 <div key={result.id} className="theme-card">
                   <div className="theme-card-header">
                     <h3 className="theme-card-title">{result.tema}</h3>
@@ -343,7 +364,9 @@ const ThemeBank = () => {
                         <Clock size={12} /> Criado em: {new Date(result.created_at).toLocaleDateString('pt-BR')}
                       </span>
                     )}
-                    <span className="theme-source">{result.fonte}</span>
+                    {result.fonte && !result.fonte.startsWith('http') && (
+                      <span className="theme-source">{result.fonte}</span>
+                    )}
                     {result.fonte && result.fonte.startsWith('http') && (
                       <a href={result.fonte} className="theme-link" target="_blank" rel="noopener noreferrer">
                         Ver fonte <ExternalLink size={12} />
