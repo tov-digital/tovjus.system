@@ -1019,6 +1019,33 @@ input:checked + .slider:before {
   border-color: var(--primary-color);
 }
 
+.freq-pill {
+  height: 32px;
+  padding: 0 1rem;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  background-color: var(--background-color);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.freq-pill:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+.freq-pill.active {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
 .recurrence-end-options {
   display: flex;
   flex-direction: column;
