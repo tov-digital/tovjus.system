@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-const RecurrenceArea = () => {
+const RecurrenceArea = ({ onChange }) => {
   const [interval, setInterval] = useState(1);
   const [frequency, setFrequency] = useState('semana');
-  const [selectedDays, setSelectedDays] = useState(['T']); // Example default
+  const [selectedDays, setSelectedDays] = useState(['2']); // 'T' -> 2
   const [endType, setEndType] = useState('nunca');
   const [endDate, setEndDate] = useState('');
   const [occurrences, setOccurrences] = useState(13);
+
+  useEffect(() => {
+    if (onChange) {
+      onChange({ interval, frequency, selectedDays, endType, endDate, occurrences });
+    }
+  }, [interval, frequency, selectedDays, endType, endDate, occurrences, onChange]);
 
   const daysOfWeek = [
     { label: 'D', value: '0' },

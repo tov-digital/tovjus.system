@@ -1,13 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import CopywriterForm from './components/CopywriterForm';
 import TranscriberForm from './components/TranscriberForm';
 import ThemeBank from './components/ThemeBank';
 import ScriptwriterForm from './components/ScriptwriterForm';
+import Login from './components/Login';
+import { supabase } from './supabase';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('transcritor');
+  const [session, setSession] = useState(null);
+  
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+  const [activeTab, setActiveTab] = useState('pesquisador');
   
   const [output, setOutput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -66,6 +83,10 @@ function App() {
       setIsGeneratingScript(false);
     }
   };
+
+  if (!session) {
+    return <Login />;
+  }
 
   return (
     <div className="app-container">
