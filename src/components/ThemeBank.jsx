@@ -6,6 +6,7 @@ import RecurrenceArea from './RecurrenceArea';
 
 const ThemeBank = () => {
   const [query, setQuery] = useState('');
+  const [quantity, setQuantity] = useState('');
   const [searchType, setSearchType] = useState(''); 
   const [dateRange, setDateRange] = useState({ start: null, end: null });
   const [recurrence, setRecurrence] = useState(null);
@@ -140,12 +141,13 @@ const ThemeBank = () => {
     setIsSearching(true);
 
     try {
-      let payload = { tema: query };
+      let payload = { 
+        tema: query,
+        quantidade: quantity || 1 
+      };
       
       if (searchType === 'assuntos-em-alta') {
-        payload.tipo_busca = 'em_alta';
-      } else if (searchType === 'noticias') {
-        payload.tipo_busca = 'noticias';
+        payload.tipo_busca = 'pontual';
         if (dateRange.start) payload.data_inicio = dateRange.start;
         if (dateRange.end) payload.data_fim = dateRange.end;
       } else if (searchType === 'agendada') {
@@ -153,7 +155,7 @@ const ThemeBank = () => {
         payload.recorrencia = recurrence;
       }
 
-      await fetch('https://n8n.srv1077266.hstgr.cloud/webhook/em_alta', {
+      await fetch('https://n8n.srv1077266.hstgr.cloud/webhook/pesquisador', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -187,34 +189,39 @@ const ThemeBank = () => {
         </div>
 
         <form onSubmit={handleSearch} className="form-container" style={{ marginTop: '1rem' }}>
-          <div className="form-group">
-            <input
-              type="text"
-              className="form-input"
-              placeholder="Ex: Inteligência Artificial, Direito Tributário, Marketing..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              required
-            />
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <div className="form-group" style={{ flex: 1 }}>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Ex: Inteligência Artificial, Direito Tributário, Marketing..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                required
+              />
+            </div>
+            <div className="form-group" style={{ width: '80px' }}>
+              <input
+                type="number"
+                className="form-input"
+                placeholder="Qtd."
+                min="1"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="form-row" style={{ marginTop: '1rem' }}>
             <div className="form-group" style={{ flex: 1 }}>
               <label className="form-label">Tipo de Busca</label>
-              <div className="card-grid-3">
+              <div className="card-grid">
                 <div 
                   className={`selection-card ${searchType === 'assuntos-em-alta' ? 'selected' : ''}`}
                   onClick={() => setSearchType('assuntos-em-alta')}
                 >
                   <TrendingUp size={16} />
-                  <span>Em Alta</span>
-                </div>
-                <div 
-                  className={`selection-card ${searchType === 'noticias' ? 'selected' : ''}`}
-                  onClick={() => setSearchType('noticias')}
-                >
-                  <Newspaper size={16} />
-                  <span>Notícias</span>
+                  <span>Pontual</span>
                 </div>
                 <div 
                   className={`selection-card ${searchType === 'agendada' ? 'selected' : ''}`}
@@ -227,7 +234,7 @@ const ThemeBank = () => {
             </div>
           </div>
 
-          {searchType === 'noticias' && (
+          {searchType === 'assuntos-em-alta' && (
             <div className="form-group" style={{ marginTop: '1rem' }}>
               <label className="form-label">Período</label>
               <DateRangeCalendar onRangeChange={setDateRange} />

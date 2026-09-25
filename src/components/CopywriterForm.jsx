@@ -119,7 +119,7 @@ const CopywriterForm = ({ onSubmit, isGenerating, output, setOutput, sharedInput
         </div>
 
         {/* Coluna Direita: Tipo, Parâmetros e Botão */}
-        <div className="form-col-right">
+        <div className="form-col-right panel">
           {/* Panel 2: Tipo */}
           <div className="form-group">
             <label className="form-label">Tipo</label>
@@ -197,7 +197,7 @@ const CopywriterForm = ({ onSubmit, isGenerating, output, setOutput, sharedInput
           </div>
 
           {/* Panel 4: Instruções Adicionais */}
-          <div className="panel panel-instructions" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <div className="panel-instructions" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
             <div className="form-group form-group-fill" style={{ flex: 1, marginBottom: '1rem' }}>
               <label className="form-label" htmlFor="descricao">Instruções Adicionais</label>
               <div className="textarea-wrapper" style={{ flex: 1 }}>
