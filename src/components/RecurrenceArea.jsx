@@ -68,7 +68,7 @@ const RecurrenceArea = ({ onChange }) => {
   };
 
   return (
-    <div className="recurrence-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', padding: '3rem 0' }}>
+    <div className="recurrence-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', padding: '1.5rem 0' }}>
       
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.75rem', width: 'max-content' }}>
         

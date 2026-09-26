@@ -141,18 +141,34 @@ const ThemeBank = () => {
     setIsSearching(true);
 
     try {
-      let payload = { 
-        tema: query,
-        quantidade: quantity || 1 
-      };
+      let payload = {};
       
       if (searchType === 'assuntos-em-alta') {
-        payload.tipo_busca = 'pontual';
+        payload = { 
+          tema: query,
+          quantidade: quantity || 1,
+          tipo_busca: 'pontual'
+        };
         if (dateRange.start) payload.data_inicio = dateRange.start;
         if (dateRange.end) payload.data_fim = dateRange.end;
       } else if (searchType === 'agendada') {
-        payload.tipo_busca = 'agendada';
-        payload.recorrencia = recurrence;
+        const freqMap = { 'diariamente': 'diaria', 'semanalmente': 'semanal', 'mensalmente': 'mensal' };
+        
+        payload = {
+          tipo_busca: 'agendada',
+          tema: query,
+          quantidade: quantity,
+          frequencia: freqMap[recurrence.frequency] || recurrence.frequency,
+          horario: recurrence.hourOfDay
+        };
+        
+        if (recurrence.frequency === 'semanalmente') {
+          payload.dia_semana = recurrence.selectedDays.map(d => d === '0' ? '7' : d).join(', ');
+        } else if (recurrence.frequency === 'mensalmente') {
+          payload.dia_mes = recurrence.dayOfMonth;
+        } else if (recurrence.frequency === 'diariamente') {
+          payload.fim_de_semana = recurrence.includeWeekend;
+        }
       }
 
       await fetch('https://n8n.srv1077266.hstgr.cloud/webhook/pesquisador', {
@@ -200,14 +216,21 @@ const ThemeBank = () => {
                 required
               />
             </div>
-            <div className="form-group" style={{ width: '80px' }}>
+            <div className="form-group" style={{ width: '70px' }}>
               <input
-                type="number"
+                type="text"
                 className="form-input"
                 placeholder="Qtd."
-                min="1"
                 value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
+                onChange={e => {
+                  let val = e.target.value.replace(/\D/g, '');
+                  setQuantity(val);
+                }}
+                onBlur={() => {
+                  if (quantity === '' || parseInt(quantity, 10) < 1) setQuantity('1');
+                }}
+                required
+                style={{ textAlign: 'center', width: '70px', fontFamily: 'inherit', boxSizing: 'border-box' }}
               />
             </div>
           </div>
