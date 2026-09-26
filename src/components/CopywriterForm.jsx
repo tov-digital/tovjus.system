@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
-import { Send, Loader2, Maximize2, X, Film, Image as ImageIcon, Layers, Smartphone, Plus, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Send, Loader2, Maximize2, X, Film, Image as ImageIcon, Layers, Smartphone, Plus, Trash2, Search } from 'lucide-react';
 import OutputEditor from './OutputEditor';
+import { supabase } from '../supabase';
 
 const CopywriterForm = ({ onSubmit, isGenerating, output, setOutput, sharedInput }) => {
   const [activeModalField, setActiveModalField] = useState(null);
+  const [approvedThemes, setApprovedThemes] = useState([]);
+  const [isLoadingThemes, setIsLoadingThemes] = useState(false);
+  const [themeSearchQuery, setThemeSearchQuery] = useState('');
   const [fieldOptions, setFieldOptions] = useState({
     genero: ['Artigo', 'Post Redes Sociais', 'Email Marketing', 'Roteiro', 'Anúncio'],
     formato: ['Blog Post', 'Carrossel', 'Reels/TikTok', 'Texto Longo', 'Texto Curto'],
@@ -31,18 +35,42 @@ const CopywriterForm = ({ onSubmit, isGenerating, output, setOutput, sharedInput
     descricao: ''
   });
 
-  const handleAddOption = (e) => {
+  const handleAddOption = async (e) => {
     e.preventDefault();
     if (!newOptionText.trim() || !manageOptionsModal) return;
+    const newText = newOptionText.trim();
+
+    if (manageOptionsModal === 'formato') {
+      const { error } = await supabase
+        .from('tipo_de_copy')
+        .insert([{ formato: newText }]);
+      
+      if (error) {
+        console.error('Erro ao salvar formato:', error);
+      }
+    }
+
     setFieldOptions(prev => ({
       ...prev,
-      [manageOptionsModal]: [...prev[manageOptionsModal], newOptionText.trim()]
+      [manageOptionsModal]: [...prev[manageOptionsModal], newText]
     }));
     setNewOptionText('');
   };
 
-  const handleDeleteOption = (optionToDelete) => {
+  const handleDeleteOption = async (optionToDelete) => {
     if (!manageOptionsModal) return;
+
+    if (manageOptionsModal === 'formato') {
+      const { error } = await supabase
+        .from('tipo_de_copy')
+        .delete()
+        .eq('formato', optionToDelete);
+        
+      if (error) {
+        console.error('Erro ao excluir formato:', error);
+      }
+    }
+
     setFieldOptions(prev => ({
       ...prev,
       [manageOptionsModal]: prev[manageOptionsModal].filter(opt => opt !== optionToDelete)
@@ -57,11 +85,40 @@ const CopywriterForm = ({ onSubmit, isGenerating, output, setOutput, sharedInput
     }
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (sharedInput) {
       setFormData(prev => ({ ...prev, inputContent: sharedInput }));
     }
   }, [sharedInput]);
+
+  useEffect(() => {
+    const fetchFormatos = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('tipo_de_copy')
+          .select('formato');
+        
+        if (error) throw error;
+        
+        if (data) {
+          const formatosFromDb = data.map(item => item.formato).filter(Boolean);
+          if (formatosFromDb.length > 0) {
+            setFieldOptions(prev => ({
+              ...prev,
+              formato: formatosFromDb
+            }));
+            setFormData(prev => ({
+              ...prev,
+              formato: formatosFromDb.includes(prev.formato) ? prev.formato : formatosFromDb[0]
+            }));
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao buscar formatos:', err);
+      }
+    };
+    fetchFormatos();
+  }, []);
 
   const handleCardSelect = (name, value) => {
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -88,6 +145,26 @@ const CopywriterForm = ({ onSubmit, isGenerating, output, setOutput, sharedInput
     setActiveModalField(null);
   };
 
+  const openThemeSelector = async (e) => {
+    if (e) e.preventDefault();
+    setActiveModalField('themeSelector');
+    setIsLoadingThemes(true);
+    try {
+      const { data, error } = await supabase
+        .from('pesquisador')
+        .select('*')
+        .eq('status', 'aprovado')
+        .order('id', { ascending: false });
+      
+      if (error) throw error;
+      setApprovedThemes(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar temas:', error);
+    } finally {
+      setIsLoadingThemes(false);
+    }
+  };
+
   return (
     <>
       <form onSubmit={handleSubmit} className="main-layout-grid">
@@ -97,8 +174,9 @@ const CopywriterForm = ({ onSubmit, isGenerating, output, setOutput, sharedInput
           {/* Panel 1: Input */}
           <div className="panel panel-input">
             <div className="form-group form-group-fill">
-              <div style={{ display: 'flex', alignItems: 'center', height: '32px', marginBottom: '0.35rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '32px', marginBottom: '0.35rem' }}>
                 <label className="form-label" htmlFor="inputContent" style={{ margin: 0 }}>Input</label>
+                <button type="button" onClick={openThemeSelector} style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontSize: '0.85rem', cursor: 'pointer', padding: 0, fontWeight: '500', textDecoration: 'underline' }}>Escolher...</button>
               </div>
               <div className="textarea-wrapper">
                 <textarea
@@ -253,6 +331,64 @@ const CopywriterForm = ({ onSubmit, isGenerating, output, setOutput, sharedInput
             onChange={activeModalField === 'output' ? (e) => setOutput(e.target.value) : handleChange}
             autoFocus
           />
+        </div>
+      </div>
+    )}
+
+    {activeModalField === 'themeSelector' && (
+      <div className="modal-overlay" onClick={closeModal}>
+        <div className="modal-content" style={{ maxWidth: '600px', height: '80vh', display: 'flex', flexDirection: 'column', backgroundColor: '#ffffff' }} onClick={e => e.stopPropagation()}>
+          <div className="modal-header">
+            <span>Escolher Tema Aprovado</span>
+            <button className="btn-icon" onClick={closeModal} type="button">
+              <X size={16} />
+            </button>
+          </div>
+          
+          <div style={{ padding: '1rem', borderBottom: '1px solid var(--border-color)' }}>
+            <div style={{ position: 'relative' }}>
+              <Search size={16} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+              <input 
+                type="text" 
+                className="form-input" 
+                placeholder="Buscar tema aprovado..." 
+                value={themeSearchQuery}
+                onChange={(e) => setThemeSearchQuery(e.target.value)}
+                style={{ paddingLeft: '2.5rem' }}
+              />
+            </div>
+          </div>
+          
+          <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', backgroundColor: '#f8fafc' }}>
+            {isLoadingThemes ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                <Loader2 className="animate-spin" size={24} />
+              </div>
+            ) : (
+              approvedThemes
+                .filter(t => t.tema.toLowerCase().includes(themeSearchQuery.toLowerCase()) || (t.resultado && t.resultado.toLowerCase().includes(themeSearchQuery.toLowerCase())))
+                .map(theme => (
+                <div 
+                  key={theme.id} 
+                  className="theme-card" 
+                  style={{ cursor: 'pointer', padding: '1rem', backgroundColor: '#ffffff' }}
+                  onClick={() => {
+                    setFormData(prev => ({ ...prev, inputContent: `Tema: ${theme.tema}\n\nDescrição: ${theme.resultado || ''}` }));
+                    closeModal();
+                  }}
+                >
+                  <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--primary-color)' }}>{theme.tema}</h4>
+                  {theme.resultado && <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{theme.resultado}</p>}
+                </div>
+              ))
+            )}
+            
+            {!isLoadingThemes && approvedThemes.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                Nenhum tema aprovado encontrado.
+              </div>
+            )}
+          </div>
         </div>
       </div>
     )}

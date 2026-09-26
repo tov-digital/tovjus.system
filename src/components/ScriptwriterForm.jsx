@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Send, Loader2, Image as ImageIcon, Download, Maximize2, X, Sparkles, Plus, Trash2, Search } from 'lucide-react';
 import OutputEditor from './OutputEditor';
 import { supabase } from '../supabase';
 
 
-const ScriptwriterForm = ({ onSubmit, isGenerating, output, setOutput }) => {
+const ScriptwriterForm = ({ onSubmit, isGenerating, output, setOutput, onCopyToInput }) => {
   const [customTheme, setCustomTheme] = useState('');
   
   const [prompt, setPrompt] = useState('');
@@ -26,18 +26,40 @@ const ScriptwriterForm = ({ onSubmit, isGenerating, output, setOutput }) => {
     formatoTexto: 'Formato de Texto'
   };
 
-  const handleAddOption = (e) => {
+  const handleAddOption = async (e) => {
     e.preventDefault();
     if (!newOptionText.trim() || !manageOptionsModal) return;
+    const newText = newOptionText.trim();
+    
+    if (manageOptionsModal === 'formatoTexto') {
+      const { error } = await supabase
+        .from('tipo_de_copy')
+        .insert([{ formato: newText }]);
+      if (error) {
+        console.error('Erro ao salvar formato:', error);
+      }
+    }
+
     setFieldOptions(prev => ({
       ...prev,
-      [manageOptionsModal]: [...prev[manageOptionsModal], newOptionText.trim()]
+      [manageOptionsModal]: [...prev[manageOptionsModal], newText]
     }));
     setNewOptionText('');
   };
 
-  const handleDeleteOption = (optionToDelete) => {
+  const handleDeleteOption = async (optionToDelete) => {
     if (!manageOptionsModal) return;
+
+    if (manageOptionsModal === 'formatoTexto') {
+      const { error } = await supabase
+        .from('tipo_de_copy')
+        .delete()
+        .eq('formato', optionToDelete);
+      if (error) {
+        console.error('Erro ao excluir formato:', error);
+      }
+    }
+
     setFieldOptions(prev => ({
       ...prev,
       [manageOptionsModal]: prev[manageOptionsModal].filter(opt => opt !== optionToDelete)
@@ -48,6 +70,32 @@ const ScriptwriterForm = ({ onSubmit, isGenerating, output, setOutput }) => {
       setFormatoTexto(remainingOptions.length > 0 ? remainingOptions[0] : '');
     }
   };
+
+  useEffect(() => {
+    const fetchFormatos = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('tipo_de_copy')
+          .select('formato');
+        
+        if (error) throw error;
+        
+        if (data) {
+          const formatosFromDb = data.map(item => item.formato).filter(Boolean);
+          if (formatosFromDb.length > 0) {
+            setFieldOptions(prev => ({
+              ...prev,
+              formatoTexto: formatosFromDb
+            }));
+            setFormatoTexto(prev => formatosFromDb.includes(prev) ? prev : formatosFromDb[0]);
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao buscar formatos:', err);
+      }
+    };
+    fetchFormatos();
+  }, []);
 
 
 
@@ -141,7 +189,7 @@ const ScriptwriterForm = ({ onSubmit, isGenerating, output, setOutput }) => {
           </div>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', height: '100%' }}>
-          <OutputEditor content={output} setContent={setOutput} onExpand={(e) => openModal('output', e)}>
+          <OutputEditor content={output} setContent={setOutput} onExpand={(e) => openModal('output', e)} onCopyToInput={onCopyToInput}>
             <button type="submit" className="btn-primary" disabled={isGenerating || !customTheme.trim()} style={{ width: '100%', padding: '0.75rem' }}>
               {isGenerating ? (
                 <>

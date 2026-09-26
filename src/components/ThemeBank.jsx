@@ -197,6 +197,24 @@ const ThemeBank = () => {
     a.tema?.toLowerCase().includes(resultSearchQuery.toLowerCase())
   );
 
+  const getFrequenciaTexto = (agendamento) => {
+    if (!agendamento.frequencia) return '';
+    if (agendamento.frequencia === 'diaria') {
+      return 'Todos os dias';
+    }
+    if (agendamento.frequencia === 'semanal') {
+      if (!agendamento.dia_semana) return 'Semanalmente';
+      const dias = agendamento.dia_semana.toString().split(',').map(d => d.trim());
+      const map = { '1': 'Segunda', '2': 'Terça', '3': 'Quarta', '4': 'Quinta', '5': 'Sexta', '6': 'Sábado', '7': 'Domingo' };
+      const diasNomes = dias.map(d => map[d] || d).join(', ');
+      return `Todo(a) ${diasNomes}`;
+    }
+    if (agendamento.frequencia === 'mensal') {
+      return `Todo dia ${agendamento.dia_mes || ''}`;
+    }
+    return '';
+  };
+
   return (
     <div className="main-layout-grid" style={{ gridTemplateColumns: '1fr 3fr' }}>
       <div className="form-col-left">
@@ -339,17 +357,40 @@ const ThemeBank = () => {
             <div className="agendamentos-grid">
               {filteredAgendamentos.map(agendamento => (
                 <div key={agendamento.id} className="agendamento-card">
-                  <div className="agendamento-header">
-                    <h3 className="agendamento-title">{agendamento.tema || 'Sem Tema'}</h3>
-                    <div className="theme-card-actions">
-                      <button className="theme-action-btn edit" title="Editar" onClick={() => setEditAgendamento(agendamento)}><Pencil size={16} /></button>
-                      <button className="theme-action-btn reject" title="Deletar" onClick={() => setDeleteAgendamentoId(agendamento.id)}><Trash2 size={16} /></button>
+                  <div className="agendamento-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <h3 className="agendamento-title" style={{ margin: 0 }}>{agendamento.tema || 'Sem Tema'}</h3>
+                        {agendamento.frequencia && (
+                          <span style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', backgroundColor: agendamento.ativo !== false ? 'var(--primary-color)' : '#ef4444', color: 'white', borderRadius: '12px', textTransform: 'capitalize', fontWeight: 600, transition: 'background-color 0.2s' }}>
+                            {agendamento.frequencia === 'diaria' ? 'Diária' : agendamento.frequencia}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="theme-card-actions" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                      <label className="switch" style={{ margin: 0 }}>
+                        <input 
+                          type="checkbox" 
+                          checked={agendamento.ativo !== false} 
+                          onChange={async (e) => {
+                            const newStatus = e.target.checked;
+                            const updated = agendamentos.map(a => a.id === agendamento.id ? {...a, ativo: newStatus} : a);
+                            setAgendamentos(updated);
+                            await supabase.from('pesquisador_agendamentos').update({ ativo: newStatus }).eq('id', agendamento.id);
+                          }}
+                        />
+                        <span className="slider round"></span>
+                      </label>
+                      <button className="theme-action-btn reject" title="Deletar" onClick={() => setDeleteAgendamentoId(agendamento.id)}>
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   </div>
-                  <div className="agendamento-body">
-                    <div className="agendamento-detail"><span className="detail-label">Repetir a cada:</span> {agendamento['repetir a cada'] || agendamento.repetir_a_cada}</div>
-                    <div className="agendamento-detail"><span className="detail-label">Dias:</span> {agendamento.dias}</div>
-                    <div className="agendamento-detail"><span className="detail-label">Termina em:</span> {agendamento['termina em'] || agendamento.termina_em}</div>
+                  <div className="agendamento-body" style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                    <div><strong>Quantidade:</strong> {agendamento.quantidade || 1}</div>
+                    <div><strong>Horário:</strong> {agendamento.horario || '--'}</div>
+                    <div><strong>Repetição:</strong> {getFrequenciaTexto(agendamento)}</div>
                   </div>
                 </div>
               ))}

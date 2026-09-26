@@ -74,9 +74,23 @@ function App() {
   const handleSubmitScript = async (formData) => {
     setIsGeneratingScript(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      const mockResult = `[Roteiro Gerado]\n\nTema: ${formData.theme}\n${formData.prompt ? `Prompt da Imagem: ${formData.prompt}\n` : ''}${formData.useTextAsBase ? 'Usando o texto como base para a imagem.\n' : ''}\n(Cena 1)\n\nNarrador: Olá, hoje vamos explorar o tema ${formData.theme}.\n\n(Cena 2)\n\nNarrador: Acompanhe este roteiro detalhado.`;
-      setScriptOutput(mockResult);
+      const response = await fetch('https://n8n.srv1077266.hstgr.cloud/webhook/escrever', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          formato_de_texto: formData.formatoTexto,
+          tema: formData.theme
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao acionar o webhook');
+      }
+
+      const resultData = await response.text();
+      setScriptOutput(resultData);
     } catch (error) {
       console.error("Error generating script:", error);
       setScriptOutput("Ocorreu um erro ao gerar o roteiro. Tente novamente.");
@@ -122,6 +136,7 @@ function App() {
               isGenerating={isGeneratingScript} 
               output={scriptOutput}
               setOutput={setScriptOutput}
+              onCopyToInput={handleCopyToInput}
             />
           )}
           {activeTab === 'imagens' && (

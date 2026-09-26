@@ -930,6 +930,10 @@ input:checked + .slider:before {
   to { transform: rotate(360deg); }
 }
 
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
 /* Recurrence Area */
 .recurrence-container {
   display: flex;
