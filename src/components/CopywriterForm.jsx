@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Loader2, Maximize2, X, Film, Image as ImageIcon, Layers, Smartphone, Plus, Trash2, Search } from 'lucide-react';
+import { Send, Loader2, Maximize2, X, Film, Image as ImageIcon, Layers, Smartphone, Plus, Trash2, Search, ExternalLink } from 'lucide-react';
 import OutputEditor from './OutputEditor';
 import { supabase } from '../supabase';
 
@@ -373,12 +373,23 @@ const CopywriterForm = ({ onSubmit, isGenerating, output, setOutput, sharedInput
                   className="theme-card" 
                   style={{ cursor: 'pointer', padding: '1rem', backgroundColor: '#ffffff' }}
                   onClick={() => {
-                    setFormData(prev => ({ ...prev, inputContent: `Tema: ${theme.tema}\n\nDescrição: ${theme.resultado || ''}` }));
+                    setFormData(prev => ({ ...prev, inputContent: `Tema: ${theme.tema}\n\nDescrição: ${theme.resultado || ''}${theme.fonte ? `\n\nFonte: ${theme.fonte}` : ''}` }));
                     closeModal();
                   }}
                 >
                   <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--primary-color)' }}>{theme.tema}</h4>
                   {theme.resultado && <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{theme.resultado}</p>}
+                  {theme.fonte && (
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>
+                      {theme.fonte.startsWith('http') ? (
+                        <a href={theme.fonte} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary-color)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }} onClick={e => e.stopPropagation()}>
+                          Ver fonte <ExternalLink size={12} />
+                        </a>
+                      ) : (
+                        <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>Fonte: {theme.fonte}</span>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))
             )}

@@ -90,7 +90,24 @@ function App() {
       }
 
       const resultData = await response.text();
-      setScriptOutput(resultData);
+      
+      let parsedOutput = resultData;
+      try {
+        const parsed = JSON.parse(resultData);
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].output) {
+          parsedOutput = parsed[0].output;
+        } else if (parsed && parsed.output) {
+          parsedOutput = parsed.output;
+        }
+      } catch (e) {
+        console.warn("Retorno não é um JSON válido, usando texto bruto", e);
+      }
+      
+      if (typeof parsedOutput === 'string') {
+        parsedOutput = parsedOutput.replace(/\\n/g, '\n');
+      }
+
+      setScriptOutput(parsedOutput);
     } catch (error) {
       console.error("Error generating script:", error);
       setScriptOutput("Ocorreu um erro ao gerar o roteiro. Tente novamente.");
