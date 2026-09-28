@@ -46,9 +46,45 @@ function App() {
   const handleSubmitContent = async (formData) => {
     setIsGenerating(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      const mockResult = `Aqui está o conteúdo gerado com base nas suas preferências:\n\nGênero: ${formData.genero}\nTom: ${formData.tom}\n\n[Início do Texto]\n\nEste é um parágrafo gerado automaticamente simulando o retorno do webhook. O conteúdo foi adaptado para o formato de ${formData.formato} usando uma estrutura do tipo ${formData.estrutura}.\n\nAo final, temos a seguinte chamada de ação: ${formData.cta}.\n\n[Fim do Texto]`;
-      setOutput(mockResult);
+      const response = await fetch('https://n8n.srv1077266.hstgr.cloud/webhook/roteirizador', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          input: formData.inputContent,
+          tipo: formData.tipo,
+          genero: formData.genero,
+          formato: formData.formato,
+          tom_de_voz: formData.tom,
+          call_to_action: formData.cta,
+          instrucoes_adicionais: formData.descricao
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao acionar o webhook');
+      }
+
+      const resultData = await response.text();
+      
+      let parsedOutput = resultData;
+      try {
+        const parsed = JSON.parse(resultData);
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].output) {
+          parsedOutput = parsed[0].output;
+        } else if (parsed && parsed.output) {
+          parsedOutput = parsed.output;
+        }
+      } catch (e) {
+        console.warn("Retorno não é um JSON válido, usando texto bruto", e);
+      }
+      
+      if (typeof parsedOutput === 'string') {
+        parsedOutput = parsedOutput.replace(/\\n/g, '\n');
+      }
+
+      setOutput(parsedOutput);
     } catch (error) {
       console.error("Error generating content:", error);
       setOutput("Ocorreu um erro ao gerar o conteúdo. Tente novamente.");

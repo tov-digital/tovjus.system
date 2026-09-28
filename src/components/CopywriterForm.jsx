@@ -35,18 +35,26 @@ const CopywriterForm = ({ onSubmit, isGenerating, output, setOutput, sharedInput
     descricao: ''
   });
 
+  const columnMap = {
+    genero: 'genero',
+    formato: 'formato',
+    tom: 'tom_de_voz',
+    cta: 'cta'
+  };
+
   const handleAddOption = async (e) => {
     e.preventDefault();
     if (!newOptionText.trim() || !manageOptionsModal) return;
     const newText = newOptionText.trim();
+    const columnName = columnMap[manageOptionsModal];
 
-    if (manageOptionsModal === 'formato') {
+    if (columnName) {
       const { error } = await supabase
-        .from('tipo_de_copy')
-        .insert([{ formato: newText }]);
+        .from('roteirizador')
+        .insert([{ [columnName]: newText }]);
       
       if (error) {
-        console.error('Erro ao salvar formato:', error);
+        console.error(`Erro ao salvar ${manageOptionsModal}:`, error);
       }
     }
 
@@ -59,15 +67,16 @@ const CopywriterForm = ({ onSubmit, isGenerating, output, setOutput, sharedInput
 
   const handleDeleteOption = async (optionToDelete) => {
     if (!manageOptionsModal) return;
+    const columnName = columnMap[manageOptionsModal];
 
-    if (manageOptionsModal === 'formato') {
+    if (columnName) {
       const { error } = await supabase
-        .from('tipo_de_copy')
+        .from('roteirizador')
         .delete()
-        .eq('formato', optionToDelete);
+        .eq(columnName, optionToDelete);
         
       if (error) {
-        console.error('Erro ao excluir formato:', error);
+        console.error(`Erro ao excluir ${manageOptionsModal}:`, error);
       }
     }
 
@@ -95,26 +104,34 @@ const CopywriterForm = ({ onSubmit, isGenerating, output, setOutput, sharedInput
     const fetchFormatos = async () => {
       try {
         const { data, error } = await supabase
-          .from('tipo_de_copy')
-          .select('formato');
+          .from('roteirizador')
+          .select('genero, formato, tom_de_voz, cta');
         
         if (error) throw error;
         
         if (data) {
-          const formatosFromDb = data.map(item => item.formato).filter(Boolean);
-          if (formatosFromDb.length > 0) {
-            setFieldOptions(prev => ({
-              ...prev,
-              formato: formatosFromDb
-            }));
-            setFormData(prev => ({
-              ...prev,
-              formato: formatosFromDb.includes(prev.formato) ? prev.formato : formatosFromDb[0]
-            }));
-          }
+          const generos = [...new Set(data.map(item => item.genero).filter(Boolean))];
+          const formatos = [...new Set(data.map(item => item.formato).filter(Boolean))];
+          const tons = [...new Set(data.map(item => item.tom_de_voz).filter(Boolean))];
+          const ctas = [...new Set(data.map(item => item.cta).filter(Boolean))];
+
+          setFieldOptions({
+            genero: generos.length > 0 ? generos : ['Artigo', 'Post Redes Sociais', 'Email Marketing', 'Roteiro', 'Anúncio'],
+            formato: formatos.length > 0 ? formatos : ['Blog Post', 'Carrossel', 'Reels/TikTok', 'Texto Longo', 'Texto Curto'],
+            tom: tons.length > 0 ? tons : ['Profissional', 'Descontraído', 'Autoridade', 'Empático', 'Inspirador'],
+            cta: ctas.length > 0 ? ctas : ['Assinar Newsletter', 'Comprar Agora', 'Saiba Mais', 'Comentar/Compartilhar', 'Entrar em Contato']
+          });
+
+          setFormData(prev => ({
+            ...prev,
+            genero: generos.includes(prev.genero) ? prev.genero : (generos[0] || prev.genero),
+            formato: formatos.includes(prev.formato) ? prev.formato : (formatos[0] || prev.formato),
+            tom: tons.includes(prev.tom) ? prev.tom : (tons[0] || prev.tom),
+            cta: ctas.includes(prev.cta) ? prev.cta : (ctas[0] || prev.cta)
+          }));
         }
       } catch (err) {
-        console.error('Erro ao buscar formatos:', err);
+        console.error('Erro ao buscar opções:', err);
       }
     };
     fetchFormatos();
